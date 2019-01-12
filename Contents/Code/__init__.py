@@ -44,7 +44,7 @@ class EXCAgent(Agent.Movies):
       searchUrl = EXC_SEARCH_MOVIES_YEAR % (query, year, year)
     else:
       searchUrl = EXC_SEARCH_MOVIES % query
-      
+
     Log('search url: ' + searchUrl)
 
     searchResults = HTML.ElementFromURL(searchUrl)
@@ -93,12 +93,13 @@ class EXCAgent(Agent.Movies):
     # Genre.
     try:
       metadata.genres.clear()
-      genres = html.xpath('//table[@width="620"]//table[@width="620"]//a[contains(@href, "DVD/Categories")]')
+      genres = html.xpath('//a[contains(@href, "DVD/Categories") and @class="starLink"]')
 
       if len(genres) > 0:
         for genreLink in genres:
           genreName = genreLink.text_content().strip('\n')
-          if len(genreName) > 0 and re.match(r'View Complete List', genreName) is None:
+          Log('Genre: %s' % str(genreName))
+          if len(genreName) > 0 and re.match(r'View Complete List', genreName) is None and re.match(r'High Definition DVDs', genreName) is None:
             metadata.genres.add(genreName)
     except: pass
 
@@ -129,21 +130,23 @@ class EXCAgent(Agent.Movies):
       metadata.roles.clear()
       for member in starring:
         role = metadata.roles.new()
-        role.actor = member.replace('&#13;', '').strip('. \t\n\r')
+        role.name = member.replace('&#13;', '').strip('. \t\n\r')
 
-        role.photo = EXC_STAR_PHOTO % role.actor.replace(' ', '_')
+        role.photo = EXC_STAR_PHOTO % role.name.replace(' ', '_')
         # actorThumbUrl = EXC_STAR_PHOTO % role.actor.replace(' ', '_')
         # actorThumb = HTTP.Request(actorThumbUrl)
         # role.photo = Proxy.Preview(actorThumb)
 
-        Log('Starring: ' + role.actor)
+        Log('Starring: ' + role.name)
     except: pass
 
     # Director
     try:
-      director = html.xpath('//a[@class="starLink" and contains(@href, "/directors/")]')[0].text_content().strip()
+      directors = html.xpath('//a[@class="starLink" and contains(@href, "/directors/")]')[0].text_content().strip()
       metadata.directors.clear()
-      metadata.directors.add(director)
+      director = metadata.directors.new()
+      director.name = directors
+      Log('Director: %' % str(directors))
     except: pass
 
     # Studio
